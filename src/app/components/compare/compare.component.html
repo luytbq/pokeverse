@@ -1,1 +1,230 @@
-<p>compare works!</p>
+<div class="max-w-6xl mx-auto p-4">
+  <h1 class="text-3xl font-bold mb-6">Compare Pokémon</h1>
+
+  <!-- Search inputs -->
+  <div class="grid md:grid-cols-[1fr_auto_1fr_auto] gap-3 items-start">
+    <!-- Left input -->
+    <div class="relative">
+      <label class="block text-xs uppercase text-gray-500 mb-1">Pokémon A</label>
+      <input
+        type="text"
+        [formControl]="left"
+        (focus)="leftFocused.set(true)"
+        (blur)="leftFocused.set(false)"
+        placeholder="Start typing…"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+      @if (leftFocused() && leftSuggestions().length > 0) {
+        <ul class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          @for (name of leftSuggestions(); track name) {
+            <li
+              (mousedown)="pickLeft(name)"
+              class="px-3 py-2 hover:bg-blue-50 cursor-pointer capitalize"
+            >
+              {{ name }}
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    <button
+      type="button"
+      (click)="swap()"
+      class="self-end h-[42px] px-3 rounded-lg border border-gray-300 hover:bg-gray-50"
+      title="Swap"
+    >
+      ⇄
+    </button>
+
+    <!-- Right input -->
+    <div class="relative">
+      <label class="block text-xs uppercase text-gray-500 mb-1">Pokémon B</label>
+      <input
+        type="text"
+        [formControl]="right"
+        (focus)="rightFocused.set(true)"
+        (blur)="rightFocused.set(false)"
+        placeholder="Start typing…"
+        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+      @if (rightFocused() && rightSuggestions().length > 0) {
+        <ul class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+          @for (name of rightSuggestions(); track name) {
+            <li
+              (mousedown)="pickRight(name)"
+              class="px-3 py-2 hover:bg-blue-50 cursor-pointer capitalize"
+            >
+              {{ name }}
+            </li>
+          }
+        </ul>
+      }
+    </div>
+
+    @if (!locked()) {
+      <button
+        type="button"
+        (click)="compare()"
+        [disabled]="!canCompare()"
+        class="self-end h-[42px] px-5 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+      >
+        Compare
+      </button>
+    } @else {
+      <button
+        type="button"
+        (click)="reset()"
+        class="self-end h-[42px] px-5 rounded-lg bg-gray-200 font-medium hover:bg-gray-300"
+      >
+        Reset
+      </button>
+    }
+  </div>
+
+  @if (error()) {
+    <p class="mt-3 text-sm text-red-600">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="mt-6 text-gray-500 animate-pulse">Loading…</p>
+  }
+
+  <!-- Results -->
+  @if (locked() && leftPokemon(); as lp) {
+    @if (rightPokemon(); as rp) {
+      <div class="grid md:grid-cols-2 gap-6 mt-8">
+        <!-- Left card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col items-center">
+          <img [src]="spriteFor(lp)" [alt]="lp.name" class="w-48 h-48" />
+          <h2 class="text-2xl font-bold capitalize mt-2">{{ lp.name }}</h2>
+          <div class="flex gap-2 mt-2">
+            @for (t of lp.types; track t.type.name) {
+              <span
+                class="px-2 py-0.5 rounded-full text-xs uppercase font-semibold"
+                [ngClass]="typeBadgeClass(t.type.name)"
+              >
+                {{ t.type.name }}
+              </span>
+            }
+          </div>
+          <p class="mt-3 text-sm text-gray-500">Total base stats: <span class="font-bold text-gray-800">{{ leftTotal() }}</span></p>
+          <button
+            type="button"
+            (click)="addLeftToTeam()"
+            [disabled]="isInTeam(lp) || isTeamFull()"
+            class="mt-4 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            {{ isInTeam(lp) ? 'In Team' : isTeamFull() ? 'Team Full' : '+ Add to Team' }}
+          </button>
+        </div>
+
+        <!-- Right card -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex flex-col items-center">
+          <img [src]="spriteFor(rp)" [alt]="rp.name" class="w-48 h-48" />
+          <h2 class="text-2xl font-bold capitalize mt-2">{{ rp.name }}</h2>
+          <div class="flex gap-2 mt-2">
+            @for (t of rp.types; track t.type.name) {
+              <span
+                class="px-2 py-0.5 rounded-full text-xs uppercase font-semibold"
+                [ngClass]="typeBadgeClass(t.type.name)"
+              >
+                {{ t.type.name }}
+              </span>
+            }
+          </div>
+          <p class="mt-3 text-sm text-gray-500">Total base stats: <span class="font-bold text-gray-800">{{ rightTotal() }}</span></p>
+          <button
+            type="button"
+            (click)="addRightToTeam()"
+            [disabled]="isInTeam(rp) || isTeamFull()"
+            class="mt-4 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+          >
+            {{ isInTeam(rp) ? 'In Team' : isTeamFull() ? 'Team Full' : '+ Add to Team' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Dual stat bars -->
+      <section class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h3 class="text-lg font-semibold mb-4">Stat comparison</h3>
+        <div class="flex flex-col gap-3">
+          @for (row of statRows(); track row.name) {
+            <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3">
+              <app-stat-bar
+                [label]="row.label"
+                [value]="row.left"
+                [compareValue]="row.right"
+                [compact]="true"
+                [reverse]="true"
+              ></app-stat-bar>
+              <span class="text-xs font-bold text-gray-400 uppercase px-1">{{ row.label }}</span>
+              <app-stat-bar
+                [label]="row.label"
+                [value]="row.right"
+                [compareValue]="row.left"
+                [compact]="true"
+              ></app-stat-bar>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Type effectiveness -->
+      <section class="mt-6 grid md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <h3 class="text-lg font-semibold mb-3 capitalize">{{ lp.name }} — Type matchups</h3>
+          @if (leftEff(); as eff) {
+            <ng-container *ngTemplateOutlet="effBlock; context: { $implicit: eff }"></ng-container>
+          } @else {
+            <p class="text-sm text-gray-400">Loading…</p>
+          }
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+          <h3 class="text-lg font-semibold mb-3 capitalize">{{ rp.name }} — Type matchups</h3>
+          @if (rightEff(); as eff) {
+            <ng-container *ngTemplateOutlet="effBlock; context: { $implicit: eff }"></ng-container>
+          } @else {
+            <p class="text-sm text-gray-400">Loading…</p>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>
+
+<!-- Reusable type-effectiveness block template -->
+<ng-template #effBlock let-eff>
+  <div class="space-y-3">
+    <div>
+      <p class="text-xs uppercase text-red-600 font-semibold mb-1">Weak to</p>
+      <div class="flex flex-wrap gap-1">
+        @for (t of eff.weaknesses; track t) {
+          <span class="px-2 py-0.5 rounded-full text-xs uppercase" [ngClass]="typeBadgeClass(t)">{{ t }}</span>
+        } @empty {
+          <span class="text-xs text-gray-400">None</span>
+        }
+      </div>
+    </div>
+    <div>
+      <p class="text-xs uppercase text-emerald-600 font-semibold mb-1">Resists</p>
+      <div class="flex flex-wrap gap-1">
+        @for (t of eff.resistances; track t) {
+          <span class="px-2 py-0.5 rounded-full text-xs uppercase" [ngClass]="typeBadgeClass(t)">{{ t }}</span>
+        } @empty {
+          <span class="text-xs text-gray-400">None</span>
+        }
+      </div>
+    </div>
+    <div>
+      <p class="text-xs uppercase text-gray-600 font-semibold mb-1">Immune to</p>
+      <div class="flex flex-wrap gap-1">
+        @for (t of eff.immunities; track t) {
+          <span class="px-2 py-0.5 rounded-full text-xs uppercase" [ngClass]="typeBadgeClass(t)">{{ t }}</span>
+        } @empty {
+          <span class="text-xs text-gray-400">None</span>
+        }
+      </div>
+    </div>
+  </div>
+</ng-template>

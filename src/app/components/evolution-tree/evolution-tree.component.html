@@ -1,0 +1,30 @@
+@if (stages.length === 0) {
+  <p class="text-sm text-gray-500 italic">This Pokémon does not evolve.</p>
+} @else {
+  <div class="flex flex-wrap items-center gap-4">
+    @for (stage of stages; track $index; let isLast = $last) {
+      <div class="flex flex-col items-center gap-2">
+        @for (node of stage; track node.id) {
+          <a
+            [routerLink]="['/pokemon', node.id]"
+            class="flex flex-col items-center p-2 rounded-lg hover:bg-blue-50 hover:scale-105 transition-transform focus:outline-none focus:ring-2 focus:ring-blue-400"
+          >
+            @if (node.condition) {
+              <span class="text-[10px] text-gray-500 italic mb-1">{{ node.condition }}</span>
+            }
+            <img
+              [src]="node.spriteUrl"
+              [alt]="node.name"
+              class="w-20 h-20"
+              loading="lazy"
+            />
+            <span class="text-sm capitalize font-medium">{{ node.name }}</span>
+          </a>
+        }
+      </div>
+      @if (!isLast) {
+        <span class="text-3xl text-gray-400 select-none">→</span>
+      }
+    }
+  </div>
+}

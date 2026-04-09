@@ -1,0 +1,35 @@
+<div
+  class="stat-bar flex items-center gap-2"
+  [class.flex-row-reverse]="reverse"
+  [class.font-bold]="isWinner"
+>
+  <span
+    class="label text-xs uppercase tracking-wide text-gray-600 shrink-0"
+    [class.w-10]="compact"
+    [class.w-16]="!compact"
+  >
+    {{ label }}
+  </span>
+  <span
+    class="value text-sm tabular-nums shrink-0"
+    [class.text-emerald-600]="isWinner"
+    [class.text-gray-400]="isLoser"
+    [class.w-8]="compact"
+    [class.w-10]="!compact"
+    [class.text-right]="!reverse"
+    [class.text-left]="reverse"
+  >
+    {{ value }}
+  </span>
+  <div
+    class="track flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden"
+    [class.flex]="reverse"
+    [class.justify-end]="reverse"
+  >
+    <div
+      class="h-full rounded-full transition-all duration-500"
+      [ngClass]="barColor"
+      [style.width.%]="percent"
+    ></div>
+  </div>
+</div>

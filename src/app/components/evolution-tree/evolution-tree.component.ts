@@ -1,5 +1,9 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { extractIdFromUrl } from '../../models/pokemon';
 
@@ -32,22 +36,19 @@ interface FlatNode {
 @Component({
   selector: 'app-evolution-tree',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [RouterLink],
   templateUrl: './evolution-tree.component.html',
   styleUrl: './evolution-tree.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EvolutionTreeComponent {
-  @Input({ required: true }) set chain(value: EvoNode | null) {
-    this._chain = value;
-    this.stages = value ? this.flatten(value) : [];
-  }
-  get chain(): EvoNode | null {
-    return this._chain;
-  }
-  private _chain: EvoNode | null = null;
+  readonly chain = input.required<EvoNode | null>();
 
   /** Each row in `stages` is one evolution stage (stage 0 = base). */
-  stages: FlatNode[][] = [];
+  readonly stages = computed<FlatNode[][]>(() => {
+    const root = this.chain();
+    return root ? this.flatten(root) : [];
+  });
 
   /**
    * Flatten the chain into stages. Because evolution chains can branch

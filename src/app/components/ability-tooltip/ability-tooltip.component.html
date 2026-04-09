@@ -1,16 +1,16 @@
 <span
   class="ability relative inline-flex items-center gap-1 px-2 py-1 rounded bg-gray-100 text-sm capitalize cursor-help"
-  [class.border]="isHidden"
-  [class.border-dashed]="isHidden"
-  [class.border-purple-400]="isHidden"
+  [class.border]="isHidden()"
+  [class.border-dashed]="isHidden()"
+  [class.border-purple-400]="isHidden()"
   (mouseenter)="onEnter()"
   (mouseleave)="onLeave()"
   (focusin)="onEnter()"
   (focusout)="onLeave()"
   tabindex="0"
 >
-  {{ displayName }}
-  @if (isHidden) {
+  {{ displayName() }}
+  @if (isHidden()) {
     <span class="text-[10px] text-purple-600 uppercase">hidden</span>
   }
 

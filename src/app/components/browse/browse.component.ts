@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,7 +17,7 @@ const PAGE_SIZE = 20;
 @Component({
   selector: 'app-browse',
   standalone: true,
-  imports: [CommonModule, PokemonCardComponent],
+  imports: [PokemonCardComponent],
   templateUrl: './browse.component.html',
   styleUrl: './browse.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -97,6 +96,4 @@ export class BrowseComponent implements OnInit {
     this.error.set(null);
     this.loadMore();
   }
-
-  trackById = (_: number, p: Pokemon): number => p.id;
 }

@@ -1,12 +1,14 @@
-import { CommonModule } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
+  DestroyRef,
+  effect,
   inject,
   signal,
 } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { FormField, form } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { Observable, of } from 'rxjs';
 import {
@@ -25,32 +27,30 @@ import { PokemonService } from '../../services/pokemon.service';
 import { StateService } from '../../services/state.service';
 import { PokemonCardComponent } from '../pokemon-card/pokemon-card.component';
 
-interface SearchFormValue {
-  name: string | null;
-  generation: number | null;
-}
-
 @Component({
   selector: 'app-search',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PokemonCardComponent],
+  imports: [NgClass, FormField, PokemonCardComponent],
   templateUrl: './search.component.html',
   styleUrl: './search.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SearchComponent implements OnInit {
+export class SearchComponent {
   private pokemonService = inject(PokemonService);
   private state = inject(StateService);
   private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
 
   readonly allTypes = POKEMON_TYPES;
   readonly generations = GENERATIONS;
   readonly typeColors = TYPE_COLORS;
 
-  readonly form = new FormGroup({
-    name: new FormControl<string>('', { nonNullable: true }),
-    generation: new FormControl<number | null>(null),
+  /** Form model — generation is the gen id as a string ('' means "all"). */
+  readonly model = signal({
+    name: '',
+    generation: '',
   });
+  readonly searchForm = form(this.model);
 
   readonly selectedTypes = signal<PokemonTypeName[]>([]);
   readonly results = signal<Pokemon[]>([]);
@@ -61,17 +61,26 @@ export class SearchComponent implements OnInit {
   readonly favorites = this.state.favorites;
   readonly teamFull = this.state.isTeamFull;
 
-  ngOnInit(): void {
-    this.form.valueChanges
+  constructor() {
+    // Re-run search whenever the model or selected types change.
+    toObservable(this.model)
       .pipe(
         debounceTime(400),
         distinctUntilChanged(
-          (a, b) =>
-            (a.name ?? '') === (b.name ?? '') &&
-            (a.generation ?? null) === (b.generation ?? null)
-        )
+          (a, b) => a.name === b.name && a.generation === b.generation,
+        ),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => this.runSearch());
+
+    // selectedTypes changes are user-driven (button clicks) — react via effect.
+    effect(() => {
+      // read to subscribe
+      this.selectedTypes();
+      // Defer so it runs after the model effect to avoid double-firing
+      // when both change in the same tick.
+      queueMicrotask(() => this.runSearch());
+    });
   }
 
   toggleType(type: PokemonTypeName): void {
@@ -81,7 +90,6 @@ export class SearchComponent implements OnInit {
     } else if (current.length < 2) {
       this.selectedTypes.set([...current, type]);
     }
-    this.runSearch();
   }
 
   isTypeSelected(type: PokemonTypeName): boolean {
@@ -94,7 +102,7 @@ export class SearchComponent implements OnInit {
   }
 
   reset(): void {
-    this.form.reset({ name: '', generation: null });
+    this.model.set({ name: '', generation: '' });
     this.selectedTypes.set([]);
     this.results.set([]);
     this.searched.set(false);
@@ -102,9 +110,9 @@ export class SearchComponent implements OnInit {
   }
 
   private runSearch(): void {
-    const value = this.form.value as SearchFormValue;
-    const name = (value.name ?? '').trim().toLowerCase();
-    const generation = value.generation ?? null;
+    const { name: rawName, generation: genStr } = this.model();
+    const name = rawName.trim().toLowerCase();
+    const generation = genStr ? parseInt(genStr, 10) : null;
     const types = this.selectedTypes();
 
     // If nothing is set, clear the results.
@@ -154,13 +162,13 @@ export class SearchComponent implements OnInit {
                   (obs) =>
                     new Promise<number[]>((resolve, reject) => {
                       obs.subscribe({ next: resolve, error: reject });
-                    })
-                )
+                    }),
+                ),
               )
                 .then((arrays) => {
                   const [first, ...rest] = arrays;
                   const intersection = first.filter((id) =>
-                    rest.every((arr) => arr.includes(id))
+                    rest.every((arr) => arr.includes(id)),
                   );
                   sub.next(intersection);
                   sub.complete();
@@ -174,14 +182,14 @@ export class SearchComponent implements OnInit {
           // Cap results to avoid hammering the API.
           const limited = ids.slice(0, 60);
           return this.pokemonService.fetchMany(limited);
-        })
+        }),
       )
       .subscribe({
         next: (pokemons) => {
           let filtered = pokemons;
           if (name) {
             filtered = filtered.filter((p) =>
-              p.name.toLowerCase().includes(name)
+              p.name.toLowerCase().includes(name),
             );
           }
           this.results.set(filtered);
@@ -219,6 +227,4 @@ export class SearchComponent implements OnInit {
   typeBadgeClass(t: string): string {
     return this.typeColors[t] ?? 'bg-gray-400 text-white';
   }
-
-  trackById = (_: number, p: Pokemon): number => p.id;
 }

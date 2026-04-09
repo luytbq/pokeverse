@@ -385,3 +385,27 @@ export type BaseStatKey =
 // NOTE: the `CustomPokemon` interface for fan-made Pokémon lives in
 // `./trainer.ts` alongside the `TrainerProfile` model.
 // ----------------------------------------------------------------------------
+
+/**
+ * Slimmed view of the species response used by the Pokémon detail screen —
+ * only the fields actually consumed by the UI.
+ */
+export interface SpeciesSummary {
+  id: number;
+  flavor_text_entries: Array<{
+    flavor_text: string;
+    language: { name: string };
+  }>;
+  evolution_chain: { url: string };
+  generation: { name: string };
+}
+
+/**
+ * Slimmed view of a move used by the Pokémon detail screen's move list.
+ */
+export interface MoveDetail {
+  name: string;
+  type: string;
+  power: number | null;
+  accuracy: number | null;
+}

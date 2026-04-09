@@ -1,8 +1,8 @@
-@if (stages.length === 0) {
+@if (stages().length === 0) {
   <p class="text-sm text-gray-500 italic">This Pokémon does not evolve.</p>
 } @else {
   <div class="flex flex-wrap items-center gap-4">
-    @for (stage of stages; track $index; let isLast = $last) {
+    @for (stage of stages(); track $index; let isLast = $last) {
       <div class="flex flex-col items-center gap-2">
         @for (node of stage; track node.id) {
           <a

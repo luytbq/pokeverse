@@ -1,16 +1,23 @@
-import { CommonModule } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { FormField, form } from '@angular/forms/signals';
 import { Observable, forkJoin, of } from 'rxjs';
 import {
   catchError,
   debounceTime,
   distinctUntilChanged,
   map,
-  shareReplay,
 } from 'rxjs/operators';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { Pokemon, TYPE_COLORS } from '../../models/pokemon';
 import { PokemonService } from '../../services/pokemon.service';
 import { StateService } from '../../services/state.service';
@@ -44,17 +51,19 @@ const STAT_LABELS: Record<string, string> = {
 @Component({
   selector: 'app-compare',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, StatBarComponent],
+  imports: [NgClass, NgTemplateOutlet, FormField, StatBarComponent],
   templateUrl: './compare.component.html',
   styleUrl: './compare.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CompareComponent implements OnInit {
   private http = inject(HttpClient);
   private pokemonService = inject(PokemonService);
   private state = inject(StateService);
+  private destroyRef = inject(DestroyRef);
 
-  readonly left = new FormControl<string>('', { nonNullable: true });
-  readonly right = new FormControl<string>('', { nonNullable: true });
+  readonly model = signal({ left: '', right: '' });
+  readonly compareForm = form(this.model);
 
   readonly leftPokemon = signal<Pokemon | null>(null);
   readonly rightPokemon = signal<Pokemon | null>(null);
@@ -71,21 +80,16 @@ export class CompareComponent implements OnInit {
   /** All pokemon names for autocomplete (fetched once). */
   private allNames = signal<string[]>([]);
 
-  readonly leftSuggestions = toSignal(
-    this.buildSuggestions(this.left),
-    { initialValue: [] as string[] }
-  );
-  readonly rightSuggestions = toSignal(
-    this.buildSuggestions(this.right),
-    { initialValue: [] as string[] }
-  );
+  readonly leftSuggestions = signal<string[]>([]);
+  readonly rightSuggestions = signal<string[]>([]);
 
   readonly leftFocused = signal(false);
   readonly rightFocused = signal(false);
 
-  readonly canCompare = computed(() =>
-    !!this.left.value.trim() && !!this.right.value.trim() && !this.loading()
-  );
+  readonly canCompare = computed(() => {
+    const m = this.model();
+    return !!m.left.trim() && !!m.right.trim() && !this.loading();
+  });
 
   readonly leftTotal = computed(() => this.totalStats(this.leftPokemon()));
   readonly rightTotal = computed(() => this.totalStats(this.rightPokemon()));
@@ -105,6 +109,27 @@ export class CompareComponent implements OnInit {
     }));
   });
 
+  constructor() {
+    // Wire up debounced autocomplete suggestions for both sides.
+    toObservable(this.model)
+      .pipe(
+        map((m) => m.left),
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((q) => this.leftSuggestions.set(this.suggest(q)));
+
+    toObservable(this.model)
+      .pipe(
+        map((m) => m.right),
+        debounceTime(250),
+        distinctUntilChanged(),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((q) => this.rightSuggestions.set(this.suggest(q)));
+  }
+
   ngOnInit(): void {
     this.loadAllNames();
   }
@@ -113,43 +138,35 @@ export class CompareComponent implements OnInit {
     // One light call — names only. ~1300 items, ~60KB, cached by browser.
     this.http
       .get<{ results: { name: string; url: string }[] }>(
-        'https://pokeapi.co/api/v2/pokemon?limit=1500'
+        'https://pokeapi.co/api/v2/pokemon?limit=1500',
       )
       .pipe(
         map((res) => res.results.map((r) => r.name)),
-        catchError(() => of([] as string[]))
+        catchError(() => of([] as string[])),
       )
       .subscribe((names) => this.allNames.set(names));
   }
 
-  private buildSuggestions(control: FormControl<string>): Observable<string[]> {
-    return control.valueChanges.pipe(
-      debounceTime(250),
-      distinctUntilChanged(),
-      map((query) => {
-        const q = (query || '').trim().toLowerCase();
-        if (q.length < 2) return [];
-        return this.allNames()
-          .filter((n) => n.includes(q))
-          .slice(0, 8);
-      })
-    );
+  private suggest(query: string): string[] {
+    const q = (query || '').trim().toLowerCase();
+    if (q.length < 2) return [];
+    return this.allNames()
+      .filter((n) => n.includes(q))
+      .slice(0, 8);
   }
 
   pickLeft(name: string): void {
-    this.left.setValue(name);
+    this.model.update((m) => ({ ...m, left: name }));
     this.leftFocused.set(false);
   }
 
   pickRight(name: string): void {
-    this.right.setValue(name);
+    this.model.update((m) => ({ ...m, right: name }));
     this.rightFocused.set(false);
   }
 
   swap(): void {
-    const l = this.left.value;
-    this.left.setValue(this.right.value);
-    this.right.setValue(l);
+    this.model.update((m) => ({ left: m.right, right: m.left }));
     if (this.locked()) {
       // re-run the comparison with swapped values so the cards flip too.
       this.compare();
@@ -157,8 +174,9 @@ export class CompareComponent implements OnInit {
   }
 
   compare(): void {
-    const l = this.left.value.trim().toLowerCase();
-    const r = this.right.value.trim().toLowerCase();
+    const { left: lRaw, right: rRaw } = this.model();
+    const l = lRaw.trim().toLowerCase();
+    const r = rRaw.trim().toLowerCase();
     if (!l || !r) return;
     this.loading.set(true);
     this.error.set(null);
@@ -217,7 +235,7 @@ export class CompareComponent implements OnInit {
     const typeCalls = p.types.map((t) =>
       this.http
         .get<TypeResponseLite>(t.type.url)
-        .pipe(catchError(() => of(null as TypeResponseLite | null)))
+        .pipe(catchError(() => of(null as TypeResponseLite | null))),
     );
     return forkJoin(typeCalls).pipe(
       map((types) => {
@@ -244,7 +262,7 @@ export class CompareComponent implements OnInit {
           else if (mult < 1) resistances.push(name);
         }
         return { weaknesses, resistances, immunities };
-      })
+      }),
     );
   }
 

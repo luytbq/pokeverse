@@ -1,42 +1,51 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, computed, signal } from '@angular/core';
+import { NgClass } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
 
 @Component({
   selector: 'app-stat-bar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [NgClass],
   templateUrl: './stat-bar.component.html',
   styleUrl: './stat-bar.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatBarComponent {
-  @Input({ required: true }) label!: string;
-  @Input({ required: true }) value!: number;
-  @Input() max = 255;
+  readonly label = input.required<string>();
+  readonly value = input.required<number>();
+  readonly max = input(255);
   /** Optional comparison value. When set, this bar is highlighted if value > compareValue. */
-  @Input() compareValue: number | null = null;
+  readonly compareValue = input<number | null>(null);
   /** When true, shrink layout for compare grid use. */
-  @Input() compact = false;
+  readonly compact = input(false);
   /** Reverse direction: bar fills from right-to-left (used for right-side compare card). */
-  @Input() reverse = false;
+  readonly reverse = input(false);
 
-  get percent(): number {
-    const pct = (this.value / this.max) * 100;
+  readonly percent = computed(() => {
+    const pct = (this.value() / this.max()) * 100;
     return Math.min(100, Math.max(0, pct));
-  }
+  });
 
-  get isWinner(): boolean {
-    return this.compareValue != null && this.value > this.compareValue;
-  }
+  readonly isWinner = computed(() => {
+    const cmp = this.compareValue();
+    return cmp != null && this.value() > cmp;
+  });
 
-  get isLoser(): boolean {
-    return this.compareValue != null && this.value < this.compareValue;
-  }
+  readonly isLoser = computed(() => {
+    const cmp = this.compareValue();
+    return cmp != null && this.value() < cmp;
+  });
 
-  get barColor(): string {
-    if (this.value >= 150) return 'bg-emerald-500';
-    if (this.value >= 100) return 'bg-lime-500';
-    if (this.value >= 70) return 'bg-yellow-500';
-    if (this.value >= 40) return 'bg-orange-500';
+  readonly barColor = computed(() => {
+    const v = this.value();
+    if (v >= 150) return 'bg-emerald-500';
+    if (v >= 100) return 'bg-lime-500';
+    if (v >= 70) return 'bg-yellow-500';
+    if (v >= 40) return 'bg-orange-500';
     return 'bg-red-500';
-  }
+  });
 }

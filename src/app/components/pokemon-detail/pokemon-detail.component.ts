@@ -1,10 +1,23 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Observable, Subscription, forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
-import { Pokemon, TYPE_COLORS } from '../../models/pokemon';
+import {
+  MoveDetail,
+  Pokemon,
+  SpeciesSummary,
+  TYPE_COLORS,
+} from '../../models/pokemon';
 import { PokemonService } from '../../services/pokemon.service';
 import { StateService } from '../../services/state.service';
 import { StatBarComponent } from '../stat-bar/stat-bar.component';
@@ -14,23 +27,6 @@ import {
   EvolutionChainResponse,
   EvolutionTreeComponent,
 } from '../evolution-tree/evolution-tree.component';
-
-interface SpeciesResponse {
-  id: number;
-  flavor_text_entries: Array<{
-    flavor_text: string;
-    language: { name: string };
-  }>;
-  evolution_chain: { url: string };
-  generation: { name: string };
-}
-
-interface MoveDetail {
-  name: string;
-  type: string;
-  power: number | null;
-  accuracy: number | null;
-}
 
 const STAT_LABELS: Record<string, string> = {
   hp: 'HP',
@@ -55,6 +51,7 @@ const STAT_ORDER = ['hp', 'attack', 'defense', 'special-attack', 'special-defens
   ],
   templateUrl: './pokemon-detail.component.html',
   styleUrl: './pokemon-detail.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PokemonDetailComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
@@ -63,7 +60,7 @@ export class PokemonDetailComponent implements OnInit, OnDestroy {
   private state = inject(StateService);
 
   readonly pokemon = signal<Pokemon | null>(null);
-  readonly species = signal<SpeciesResponse | null>(null);
+  readonly species = signal<SpeciesSummary | null>(null);
   readonly evolutionRoot = signal<EvoNode | null>(null);
   readonly moves = signal<MoveDetail[]>([]);
   readonly loading = signal(true);
@@ -161,12 +158,12 @@ export class PokemonDetailComponent implements OnInit, OnDestroy {
 
   private loadAll(id: string): Observable<{
     pokemon: Pokemon;
-    species: SpeciesResponse;
+    species: SpeciesSummary;
     evolution: EvoNode | null;
     moves: MoveDetail[];
   }> {
     const pokemon$ = this.pokemonService.fetchByName(id);
-    const species$ = this.http.get<SpeciesResponse>(
+    const species$ = this.http.get<SpeciesSummary>(
       `https://pokeapi.co/api/v2/pokemon-species/${id}`
     );
     // Parallel fetch — combineLatest/forkJoin on the two initial calls.

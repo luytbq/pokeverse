@@ -3,13 +3,13 @@
   (click)="onCardClick()"
 >
   <div class="flex items-center justify-between px-4 pt-3">
-    <span class="text-xs font-mono text-gray-400">{{ paddedId }}</span>
+    <span class="text-xs font-mono text-gray-400">{{ paddedId() }}</span>
     <button
       type="button"
       class="text-lg leading-none transition-transform hover:scale-125"
-      [class.text-red-500]="isFavorite"
-      [class.text-gray-300]="!isFavorite"
-      [attr.aria-label]="isFavorite ? 'Remove from favorites' : 'Add to favorites'"
+      [class.text-red-500]="isFavorite()"
+      [class.text-gray-300]="!isFavorite()"
+      [attr.aria-label]="isFavorite() ? 'Remove from favorites' : 'Add to favorites'"
       (click)="onFavClick($event)"
     >
       &#9829;
@@ -17,30 +17,31 @@
   </div>
 
   <div class="flex items-center justify-center px-4 pb-2">
-    <img
-      *ngIf="spriteUrl; else placeholder"
-      [src]="spriteUrl"
-      [alt]="pokemon.name"
-      class="w-28 h-28 object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-200"
-      loading="lazy"
-    />
-    <ng-template #placeholder>
+    @if (spriteUrl(); as src) {
+      <img
+        [src]="src"
+        [alt]="pokemon().name"
+        class="w-28 h-28 object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-200"
+        loading="lazy"
+      />
+    } @else {
       <div class="w-28 h-28 flex items-center justify-center text-gray-300">?</div>
-    </ng-template>
+    }
   </div>
 
   <div class="px-4 pb-2">
     <h3 class="text-base font-semibold capitalize text-gray-800 truncate">
-      {{ pokemon.name }}
+      {{ pokemon().name }}
     </h3>
     <div class="mt-2 flex flex-wrap gap-1.5">
-      <span
-        *ngFor="let t of pokemon.types"
-        class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide"
-        [ngClass]="typeClass(t.type.name)"
-      >
-        {{ t.type.name }}
-      </span>
+      @for (t of pokemon().types; track t.type.name) {
+        <span
+          class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide"
+          [ngClass]="typeClass(t.type.name)"
+        >
+          {{ t.type.name }}
+        </span>
+      }
     </div>
   </div>
 
@@ -48,27 +49,27 @@
     <button
       type="button"
       class="flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors"
-      [class.bg-red-500]="isFavorite"
-      [class.text-white]="isFavorite"
-      [class.bg-white]="!isFavorite"
-      [class.text-red-500]="!isFavorite"
-      [class.border]="!isFavorite"
-      [class.border-red-500]="!isFavorite"
+      [class.bg-red-500]="isFavorite()"
+      [class.text-white]="isFavorite()"
+      [class.bg-white]="!isFavorite()"
+      [class.text-red-500]="!isFavorite()"
+      [class.border]="!isFavorite()"
+      [class.border-red-500]="!isFavorite()"
       (click)="onFavClick($event)"
     >
-      {{ isFavorite ? 'Favorited' : 'Add to Favorites' }}
+      {{ isFavorite() ? 'Favorited' : 'Add to Favorites' }}
     </button>
     <button
       type="button"
       class="flex-1 text-xs font-medium py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      [class.bg-blue-500]="!inTeam && !teamFull"
-      [class.text-white]="!inTeam && !teamFull"
-      [class.bg-gray-200]="inTeam || teamFull"
-      [class.text-gray-500]="inTeam || teamFull"
-      [disabled]="teamFull || inTeam"
+      [class.bg-blue-500]="!inTeam() && !teamFull()"
+      [class.text-white]="!inTeam() && !teamFull()"
+      [class.bg-gray-200]="inTeam() || teamFull()"
+      [class.text-gray-500]="inTeam() || teamFull()"
+      [disabled]="teamFull() || inTeam()"
       (click)="onTeamClick($event)"
     >
-      {{ inTeam ? 'In Team' : teamFull ? 'Team Full' : 'Add to Team' }}
+      {{ inTeam() ? 'In Team' : teamFull() ? 'Team Full' : 'Add to Team' }}
     </button>
   </div>
 </div>

@@ -1,6 +1,12 @@
 import { HttpClient } from '@angular/common/http';
-import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  signal,
+} from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { catchError, map, shareReplay } from 'rxjs/operators';
 
@@ -25,24 +31,23 @@ const abilityCache = new Map<string, Observable<string>>();
 @Component({
   selector: 'app-ability-tooltip',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './ability-tooltip.component.html',
   styleUrl: './ability-tooltip.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AbilityTooltipComponent implements OnInit {
-  @Input({ required: true }) name!: string;
-  @Input() url: string | null = null;
-  @Input() isHidden = false;
+export class AbilityTooltipComponent {
+  readonly name = input.required<string>();
+  readonly url = input<string | null>(null);
+  readonly isHidden = input(false);
 
   private http = inject(HttpClient);
 
   readonly hovered = signal(false);
   readonly description = signal<string>('Loading…');
-  private loaded = false;
+  readonly displayName = computed(() => this.name().replace(/-/g, ' '));
 
-  ngOnInit(): void {
-    // We lazy-load on first hover to avoid 6 simultaneous requests per detail page.
-  }
+  private loaded = false;
 
   onEnter(): void {
     this.hovered.set(true);
@@ -57,7 +62,7 @@ export class AbilityTooltipComponent implements OnInit {
 
   private fetchDescription(): Observable<string> {
     const endpoint =
-      this.url ?? `https://pokeapi.co/api/v2/ability/${this.name.toLowerCase()}`;
+      this.url() ?? `https://pokeapi.co/api/v2/ability/${this.name().toLowerCase()}`;
     const cached = abilityCache.get(endpoint);
     if (cached) return cached;
     const req$ = this.http.get<AbilityResponse>(endpoint).pipe(
@@ -83,9 +88,5 @@ export class AbilityTooltipComponent implements OnInit {
     );
     abilityCache.set(endpoint, req$);
     return req$;
-  }
-
-  get displayName(): string {
-    return this.name.replace(/-/g, ' ');
   }
 }

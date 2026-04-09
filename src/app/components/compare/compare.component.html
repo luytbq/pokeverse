@@ -8,7 +8,7 @@
       <label class="block text-xs uppercase text-gray-500 mb-1">Pokémon A</label>
       <input
         type="text"
-        [formControl]="left"
+        [formField]="compareForm.left"
         (focus)="leftFocused.set(true)"
         (blur)="leftFocused.set(false)"
         placeholder="Start typing…"
@@ -42,7 +42,7 @@
       <label class="block text-xs uppercase text-gray-500 mb-1">Pokémon B</label>
       <input
         type="text"
-        [formControl]="right"
+        [formField]="compareForm.right"
         (focus)="rightFocused.set(true)"
         (blur)="rightFocused.set(false)"
         placeholder="Start typing…"

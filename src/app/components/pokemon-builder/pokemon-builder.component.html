@@ -1,1 +1,437 @@
-<p>pokemon-builder works!</p>
+<div class="max-w-4xl mx-auto p-6">
+  <h1 class="text-3xl font-bold mb-6 text-gray-800">Pokémon Builder</h1>
+
+  <!-- Step indicator -->
+  <div class="flex items-center justify-between mb-8">
+    <div
+      *ngFor="let step of [1, 2, 3, 4]; let i = index"
+      class="flex items-center flex-1"
+    >
+      <button
+        type="button"
+        (click)="goToStep(step)"
+        class="flex items-center justify-center w-10 h-10 rounded-full font-bold transition-colors"
+        [class.bg-blue-600]="currentStep() === step"
+        [class.text-white]="currentStep() === step"
+        [class.bg-green-500]="currentStep() > step"
+        [class.bg-gray-200]="currentStep() < step"
+        [class.text-gray-600]="currentStep() < step"
+      >
+        {{ step }}
+      </button>
+      <div
+        *ngIf="i < 3"
+        class="flex-1 h-1 mx-2"
+        [class.bg-green-500]="currentStep() > step"
+        [class.bg-gray-200]="currentStep() <= step"
+      ></div>
+    </div>
+  </div>
+
+  <div class="flex justify-between text-xs text-gray-500 mb-6 -mt-6 px-1">
+    <span>Basic Info</span>
+    <span class="-ml-2">Base Stats</span>
+    <span class="-ml-2">Moves</span>
+    <span>Preview &amp; Save</span>
+  </div>
+
+  <!-- STEP 1: BASIC INFO -->
+  <div *ngIf="currentStep() === 1" class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-semibold mb-4">Step 1 — Basic Info</h2>
+
+    <form [formGroup]="basicInfoForm" class="space-y-4">
+      <!-- Name with async -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Pokémon Name <span class="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          formControlName="name"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="
+            basicInfoForm.get('name')?.invalid && basicInfoForm.get('name')?.touched
+          "
+          placeholder="Pikablu"
+        />
+        <div
+          *ngIf="basicInfoForm.get('name')?.pending"
+          class="text-gray-500 text-sm mt-1"
+        >
+          Checking availability…
+        </div>
+        <div
+          *ngIf="
+            basicInfoForm.get('name')?.invalid && basicInfoForm.get('name')?.touched
+          "
+          class="text-red-500 text-sm mt-1"
+        >
+          <span *ngIf="basicInfoForm.get('name')?.errors?.['required']">
+            Name is required.
+          </span>
+          <span *ngIf="basicInfoForm.get('name')?.errors?.['minlength']">
+            Name must be at least 3 characters.
+          </span>
+          <span *ngIf="basicInfoForm.get('name')?.errors?.['maxlength']">
+            Name must be at most 20 characters.
+          </span>
+          <span *ngIf="basicInfoForm.get('name')?.errors?.['pattern']">
+            Name must not contain numbers.
+          </span>
+          <span *ngIf="basicInfoForm.get('name')?.errors?.['nameExists']">
+            This name already exists in PokéAPI.
+          </span>
+        </div>
+      </div>
+
+      <!-- Primary type -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Primary Type <span class="text-red-500">*</span>
+        </label>
+        <select
+          formControlName="primaryType"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="
+            basicInfoForm.get('primaryType')?.invalid &&
+            basicInfoForm.get('primaryType')?.touched
+          "
+        >
+          <option value="">-- Select primary type --</option>
+          <option *ngFor="let t of types" [value]="t">{{ t | titlecase }}</option>
+        </select>
+        <div
+          *ngIf="
+            basicInfoForm.get('primaryType')?.invalid &&
+            basicInfoForm.get('primaryType')?.touched
+          "
+          class="text-red-500 text-sm mt-1"
+        >
+          Primary type is required.
+        </div>
+      </div>
+
+      <!-- Secondary type -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Secondary Type
+        </label>
+        <select
+          formControlName="secondaryType"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">-- None --</option>
+          <option *ngFor="let t of types" [value]="t">{{ t | titlecase }}</option>
+        </select>
+        <div
+          *ngIf="
+            basicInfoForm.errors?.['sameType'] &&
+            basicInfoForm.get('secondaryType')?.touched
+          "
+          class="text-red-500 text-sm mt-1"
+        >
+          Secondary type must differ from primary type.
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Pokédex Description <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          formControlName="description"
+          rows="3"
+          maxlength="200"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="
+            basicInfoForm.get('description')?.invalid &&
+            basicInfoForm.get('description')?.touched
+          "
+          placeholder="A mysterious Pokémon that…"
+        ></textarea>
+        <div class="text-xs text-gray-400 text-right">
+          {{ (basicInfoForm.get('description')?.value || '').length }}/200
+        </div>
+        <div
+          *ngIf="
+            basicInfoForm.get('description')?.invalid &&
+            basicInfoForm.get('description')?.touched
+          "
+          class="text-red-500 text-sm mt-1"
+        >
+          <span *ngIf="basicInfoForm.get('description')?.errors?.['required']">
+            Description is required.
+          </span>
+          <span *ngIf="basicInfoForm.get('description')?.errors?.['minlength']">
+            Description must be at least 20 characters.
+          </span>
+        </div>
+      </div>
+
+      <!-- Generation -->
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">
+          Generation <span class="text-red-500">*</span>
+        </label>
+        <select
+          formControlName="generation"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="
+            basicInfoForm.get('generation')?.invalid &&
+            basicInfoForm.get('generation')?.touched
+          "
+        >
+          <option [ngValue]="null">-- Select generation --</option>
+          <option *ngFor="let g of generations" [ngValue]="g.id">{{ g.name }}</option>
+        </select>
+        <div
+          *ngIf="
+            basicInfoForm.get('generation')?.invalid &&
+            basicInfoForm.get('generation')?.touched
+          "
+          class="text-red-500 text-sm mt-1"
+        >
+          Generation is required.
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- STEP 2: BASE STATS -->
+  <div *ngIf="currentStep() === 2" class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-semibold mb-4">Step 2 — Base Stats</h2>
+
+    <form [formGroup]="statsForm" class="space-y-4">
+      <div *ngFor="let key of statKeys">
+        <div class="flex items-center justify-between mb-1">
+          <label class="text-sm font-semibold text-gray-700">
+            {{ statLabels[key] }}
+          </label>
+          <span
+            class="text-sm font-mono"
+            [class.text-red-600]="statsExceeded"
+            [class.text-gray-600]="!statsExceeded"
+          >
+            {{ statsForm.get(key)?.value }}
+          </span>
+        </div>
+        <input
+          type="range"
+          [formControlName]="key"
+          min="1"
+          max="255"
+          class="w-full"
+        />
+        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden mt-1">
+          <div
+            class="h-full transition-all"
+            [class.bg-red-500]="statsExceeded"
+            [class.bg-blue-500]="!statsExceeded"
+            [style.width.%]="statPercent(key)"
+          ></div>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t">
+        <div class="flex justify-between items-center">
+          <span class="font-semibold text-gray-700">Total</span>
+          <span
+            class="text-lg font-bold"
+            [class.text-red-600]="statsExceeded"
+            [class.text-green-600]="!statsExceeded"
+          >
+            {{ statsSum }} / 600
+          </span>
+        </div>
+        <div
+          *ngIf="statsExceeded"
+          class="text-red-500 text-sm mt-2"
+        >
+          Total exceeds 600. Please reduce some stats.
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- STEP 3: MOVES -->
+  <div *ngIf="currentStep() === 3" class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-semibold mb-4">Step 3 — Moves</h2>
+
+    <form [formGroup]="movesForm">
+      <div formArrayName="moves" class="space-y-3">
+        <div
+          *ngFor="let moveCtrl of moves.controls; let i = index"
+          class="flex gap-2 items-center"
+        >
+          <select
+            [formControlName]="i"
+            class="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">-- Select move {{ i + 1 }} --</option>
+            <option *ngFor="let m of moveOptions()" [value]="m.name">
+              {{ m.name | titlecase }}
+            </option>
+          </select>
+          <button
+            type="button"
+            (click)="removeMove(i)"
+            [disabled]="moves.length <= 1"
+            class="px-3 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 disabled:bg-gray-300"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        (click)="addMove()"
+        [disabled]="moves.length >= 4"
+        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+      >
+        + Add Move ({{ moves.length }}/4)
+      </button>
+
+      <div *ngIf="moves.errors?.['duplicateMove']" class="text-red-500 text-sm mt-2">
+        Duplicate moves are not allowed.
+      </div>
+      <div
+        *ngIf="moves.invalid && !moves.errors?.['duplicateMove'] && moves.touched"
+        class="text-red-500 text-sm mt-2"
+      >
+        Please select a move for every slot.
+      </div>
+    </form>
+  </div>
+
+  <!-- STEP 4: PREVIEW & SAVE -->
+  <div *ngIf="currentStep() === 4" class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-semibold mb-4">Step 4 — Preview &amp; Save</h2>
+
+    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-6 text-center">
+      <div class="w-32 h-32 mx-auto mb-4 rounded-full bg-white flex items-center justify-center text-6xl shadow-lg">
+        ?
+      </div>
+      <h3 class="text-2xl font-bold text-gray-800">
+        {{ basicInfoForm.get('name')?.value || 'Unnamed' }}
+      </h3>
+
+      <div class="flex justify-center gap-2 mt-2 flex-wrap">
+        <span
+          *ngIf="basicInfoForm.get('primaryType')?.value"
+          [class]="
+            'px-3 py-1 rounded-full text-sm font-medium ' +
+            (typeColors[basicInfoForm.get('primaryType')?.value] || 'bg-gray-200')
+          "
+        >
+          {{ basicInfoForm.get('primaryType')?.value | titlecase }}
+        </span>
+        <span
+          *ngIf="basicInfoForm.get('secondaryType')?.value"
+          [class]="
+            'px-3 py-1 rounded-full text-sm font-medium ' +
+            (typeColors[basicInfoForm.get('secondaryType')?.value] || 'bg-gray-200')
+          "
+        >
+          {{ basicInfoForm.get('secondaryType')?.value | titlecase }}
+        </span>
+      </div>
+
+      <p class="text-gray-600 text-sm mt-4 italic">
+        {{ basicInfoForm.get('description')?.value }}
+      </p>
+    </div>
+
+    <!-- Stats bars -->
+    <div class="mt-6 space-y-2">
+      <h4 class="font-semibold text-gray-700">Base Stats ({{ statsSum }}/600)</h4>
+      <div *ngFor="let key of statKeys" class="flex items-center gap-2">
+        <span class="w-16 text-sm text-gray-600">{{ statLabels[key] }}</span>
+        <span class="w-10 text-sm font-mono text-right">
+          {{ statsForm.get(key)?.value }}
+        </span>
+        <div class="flex-1 h-3 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            class="h-full bg-blue-500"
+            [style.width.%]="statPercent(key)"
+          ></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Moves list -->
+    <div class="mt-6">
+      <h4 class="font-semibold text-gray-700 mb-2">Moves</h4>
+      <div class="flex flex-wrap gap-2">
+        <span
+          *ngFor="let m of moves.value"
+          class="px-3 py-1 bg-gray-100 rounded-full text-sm"
+        >
+          {{ m | titlecase }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Back-to-edit jumps -->
+    <div class="mt-6 border-t pt-4 flex flex-wrap gap-2">
+      <span class="text-sm text-gray-600 mr-2 self-center">Back to edit:</span>
+      <button
+        type="button"
+        (click)="goToStep(1)"
+        class="px-3 py-1 bg-gray-200 rounded-md text-sm hover:bg-gray-300"
+      >
+        Basic Info
+      </button>
+      <button
+        type="button"
+        (click)="goToStep(2)"
+        class="px-3 py-1 bg-gray-200 rounded-md text-sm hover:bg-gray-300"
+      >
+        Stats
+      </button>
+      <button
+        type="button"
+        (click)="goToStep(3)"
+        class="px-3 py-1 bg-gray-200 rounded-md text-sm hover:bg-gray-300"
+      >
+        Moves
+      </button>
+    </div>
+
+    <div *ngIf="saveMessage()" class="mt-4 text-blue-600 font-medium">
+      {{ saveMessage() }}
+    </div>
+  </div>
+
+  <!-- Navigation buttons -->
+  <div class="flex justify-between mt-6">
+    <button
+      type="button"
+      (click)="previousStep()"
+      [disabled]="currentStep() === 1"
+      class="px-5 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      ← Previous
+    </button>
+
+    <button
+      *ngIf="currentStep() < 4"
+      type="button"
+      (click)="nextStep()"
+      [disabled]="!isStepValid(currentStep())"
+      class="px-5 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+    >
+      Next →
+    </button>
+
+    <button
+      *ngIf="currentStep() === 4"
+      type="button"
+      (click)="save()"
+      class="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+    >
+      Save Pokémon
+    </button>
+  </div>
+</div>

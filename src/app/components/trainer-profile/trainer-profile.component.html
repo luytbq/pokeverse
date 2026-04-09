@@ -1,1 +1,310 @@
-<p>trainer-profile works!</p>
+<div class="max-w-6xl mx-auto p-6">
+  <h1 class="text-3xl font-bold mb-6 text-gray-800">Trainer Profile</h1>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- FORM -->
+    <form
+      #profileForm="ngForm"
+      (ngSubmit)="onSubmit(profileForm)"
+      class="bg-white rounded-lg shadow-md p-6 space-y-4"
+      novalidate
+    >
+      <!-- Trainer Name -->
+      <div>
+        <label for="name" class="block text-sm font-semibold text-gray-700 mb-1">
+          Trainer Name <span class="text-red-500">*</span>
+        </label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          [(ngModel)]="model.name"
+          (ngModelChange)="onModelChange()"
+          required
+          minlength="3"
+          maxlength="20"
+          #nameCtrl="ngModel"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="nameCtrl.invalid && nameCtrl.touched"
+          placeholder="Ash Ketchum"
+        />
+        <div
+          *ngIf="nameCtrl.invalid && nameCtrl.touched"
+          class="text-red-500 text-sm mt-1"
+        >
+          <span *ngIf="nameCtrl.errors?.['required']">Name is required.</span>
+          <span *ngIf="nameCtrl.errors?.['minlength']">
+            Name must be at least 3 characters.
+          </span>
+          <span *ngIf="nameCtrl.errors?.['maxlength']">
+            Name must be at most 20 characters.
+          </span>
+        </div>
+      </div>
+
+      <!-- Slogan -->
+      <div>
+        <label for="slogan" class="block text-sm font-semibold text-gray-700 mb-1">
+          Slogan
+        </label>
+        <input
+          id="slogan"
+          name="slogan"
+          type="text"
+          [(ngModel)]="model.slogan"
+          (ngModelChange)="onModelChange()"
+          maxlength="60"
+          #sloganCtrl="ngModel"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="sloganCtrl.invalid && sloganCtrl.touched"
+          placeholder="Gotta catch 'em all!"
+        />
+        <div
+          *ngIf="sloganCtrl.invalid && sloganCtrl.touched"
+          class="text-red-500 text-sm mt-1"
+        >
+          <span *ngIf="sloganCtrl.errors?.['maxlength']">Slogan must be 60 chars or fewer.</span>
+        </div>
+      </div>
+
+      <!-- Favorite Region -->
+      <div>
+        <label for="region" class="block text-sm font-semibold text-gray-700 mb-1">
+          Favorite Region <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="region"
+          name="favoriteRegion"
+          [(ngModel)]="model.favoriteRegion"
+          (ngModelChange)="onModelChange()"
+          required
+          #regionCtrl="ngModel"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="regionCtrl.invalid && regionCtrl.touched"
+        >
+          <option value="">-- Select a region --</option>
+          <option *ngFor="let r of regions" [value]="r">{{ r }}</option>
+        </select>
+        <div
+          *ngIf="regionCtrl.invalid && regionCtrl.touched"
+          class="text-red-500 text-sm mt-1"
+        >
+          Region is required.
+        </div>
+      </div>
+
+      <!-- Favorite Type -->
+      <div>
+        <label for="type" class="block text-sm font-semibold text-gray-700 mb-1">
+          Favorite Type <span class="text-red-500">*</span>
+        </label>
+        <select
+          id="type"
+          name="favoriteType"
+          [(ngModel)]="model.favoriteType"
+          (ngModelChange)="onModelChange()"
+          required
+          #typeCtrl="ngModel"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="typeCtrl.invalid && typeCtrl.touched"
+        >
+          <option value="">-- Select a type --</option>
+          <option *ngFor="let t of types" [value]="t">
+            {{ t | titlecase }}
+          </option>
+        </select>
+        <div
+          *ngIf="typeCtrl.invalid && typeCtrl.touched"
+          class="text-red-500 text-sm mt-1"
+        >
+          Type is required.
+        </div>
+      </div>
+
+      <!-- Avatar URL -->
+      <div>
+        <label for="avatar" class="block text-sm font-semibold text-gray-700 mb-1">
+          Avatar URL
+        </label>
+        <input
+          id="avatar"
+          name="avatarUrl"
+          type="url"
+          [(ngModel)]="model.avatarUrl"
+          (ngModelChange)="onModelChange()"
+          [pattern]="urlPattern"
+          #avatarCtrl="ngModel"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="avatarCtrl.invalid && avatarCtrl.touched"
+          placeholder="https://example.com/avatar.png"
+        />
+        <div
+          *ngIf="avatarCtrl.invalid && avatarCtrl.touched"
+          class="text-red-500 text-sm mt-1"
+        >
+          Please enter a valid URL.
+        </div>
+      </div>
+
+      <!-- Social Links -->
+      <fieldset class="border rounded-md p-4">
+        <legend class="text-sm font-semibold text-gray-700 px-2">Social Links</legend>
+
+        <div class="mb-3">
+          <label for="twitter" class="block text-sm text-gray-600 mb-1">Twitter</label>
+          <input
+            id="twitter"
+            name="twitter"
+            type="url"
+            [(ngModel)]="model.twitter"
+            (ngModelChange)="onModelChange()"
+            [pattern]="urlPattern"
+            #twitterCtrl="ngModel"
+            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            [class.border-red-500]="twitterCtrl.invalid && twitterCtrl.touched"
+            placeholder="https://twitter.com/username"
+          />
+          <div
+            *ngIf="twitterCtrl.invalid && twitterCtrl.touched"
+            class="text-red-500 text-sm mt-1"
+          >
+            Please enter a valid URL.
+          </div>
+        </div>
+
+        <div>
+          <label for="github" class="block text-sm text-gray-600 mb-1">GitHub</label>
+          <input
+            id="github"
+            name="github"
+            type="url"
+            [(ngModel)]="model.github"
+            (ngModelChange)="onModelChange()"
+            [pattern]="urlPattern"
+            #githubCtrl="ngModel"
+            class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            [class.border-red-500]="githubCtrl.invalid && githubCtrl.touched"
+            placeholder="https://github.com/username"
+          />
+          <div
+            *ngIf="githubCtrl.invalid && githubCtrl.touched"
+            class="text-red-500 text-sm mt-1"
+          >
+            Please enter a valid URL.
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Bio -->
+      <div>
+        <label for="bio" class="block text-sm font-semibold text-gray-700 mb-1">
+          Bio
+        </label>
+        <textarea
+          id="bio"
+          name="bio"
+          rows="3"
+          [(ngModel)]="model.bio"
+          (ngModelChange)="onModelChange()"
+          maxlength="200"
+          #bioCtrl="ngModel"
+          class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          [class.border-red-500]="bioCtrl.invalid && bioCtrl.touched"
+          placeholder="Tell us about yourself…"
+        ></textarea>
+        <div class="text-xs text-gray-400 text-right">
+          {{ (model.bio || '').length }}/200
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex items-center gap-3 pt-2">
+        <button
+          type="submit"
+          [disabled]="profileForm.invalid"
+          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        >
+          Save Profile
+        </button>
+        <button
+          type="button"
+          (click)="resetForm(profileForm)"
+          class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+        >
+          Reset
+        </button>
+        <span *ngIf="savedMessage()" class="text-green-600 text-sm font-medium">
+          {{ savedMessage() }}
+        </span>
+      </div>
+    </form>
+
+    <!-- LIVE PREVIEW CARD -->
+    <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg shadow-md p-6">
+      <h2 class="text-xl font-semibold mb-4 text-gray-700">Live Preview</h2>
+
+      <div class="bg-white rounded-lg shadow p-6 text-center">
+        <div class="w-32 h-32 mx-auto mb-4 rounded-full bg-gray-200 overflow-hidden border-4 border-white shadow-lg">
+          <img
+            *ngIf="profile().avatarUrl; else placeholder"
+            [src]="profile().avatarUrl"
+            alt="avatar"
+            class="w-full h-full object-cover"
+          />
+          <ng-template #placeholder>
+            <div class="w-full h-full flex items-center justify-center text-gray-400 text-4xl">
+              ?
+            </div>
+          </ng-template>
+        </div>
+
+        <h3 class="text-2xl font-bold text-gray-800">
+          {{ profile().name || 'Unnamed Trainer' }}
+        </h3>
+        <p *ngIf="profile().slogan" class="italic text-gray-500 mt-1">
+          "{{ profile().slogan }}"
+        </p>
+
+        <div class="flex justify-center gap-2 mt-4 flex-wrap">
+          <span
+            *ngIf="profile().favoriteRegion"
+            class="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium"
+          >
+            {{ profile().favoriteRegion }}
+          </span>
+          <span
+            *ngIf="profile().favoriteType"
+            [class]="'px-3 py-1 rounded-full text-sm font-medium ' + (typeColors[profile().favoriteType!] || 'bg-gray-200')"
+          >
+            {{ profile().favoriteType | titlecase }}
+          </span>
+        </div>
+
+        <p *ngIf="profile().bio" class="text-gray-600 text-sm mt-4">
+          {{ profile().bio }}
+        </p>
+
+        <div class="flex justify-center gap-3 mt-4">
+          <a
+            *ngIf="profile().twitter"
+            [href]="profile().twitter"
+            target="_blank"
+            rel="noopener"
+            class="text-blue-500 hover:underline text-sm"
+          >
+            Twitter
+          </a>
+          <a
+            *ngIf="profile().github"
+            [href]="profile().github"
+            target="_blank"
+            rel="noopener"
+            class="text-gray-700 hover:underline text-sm"
+          >
+            GitHub
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

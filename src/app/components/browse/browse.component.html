@@ -1,1 +1,55 @@
-<p>browse works!</p>
+<section class="max-w-7xl mx-auto px-4 py-6">
+  <header class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-800">Browse Pokédex</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Scroll to discover more Pokémon. Click any card to see details.
+    </p>
+  </header>
+
+  <div
+    class="grid gap-4 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+  >
+    <app-pokemon-card
+      *ngFor="let p of pokemons(); trackBy: trackById"
+      [pokemon]="p"
+      [isFavorite]="isFavorite(p.id)"
+      [teamFull]="teamFull()"
+      [inTeam]="isInTeam(p.id)"
+      (cardClick)="onCardClick(p)"
+      (addToFavorites)="onAddToFavorites(p)"
+      (addToTeam)="onAddToTeam(p)"
+    ></app-pokemon-card>
+
+    <ng-container *ngIf="loading()">
+      <div
+        *ngFor="let s of skeletonArr"
+        class="animate-pulse rounded-2xl bg-white border border-gray-100 shadow-sm h-64 flex flex-col p-4"
+      >
+        <div class="h-3 w-10 bg-gray-200 rounded mb-3"></div>
+        <div class="flex-1 flex items-center justify-center">
+          <div class="w-24 h-24 rounded-full bg-gray-200"></div>
+        </div>
+        <div class="h-4 w-24 bg-gray-200 rounded mt-3"></div>
+        <div class="flex gap-2 mt-2">
+          <div class="h-4 w-12 bg-gray-200 rounded-full"></div>
+          <div class="h-4 w-12 bg-gray-200 rounded-full"></div>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+
+  <div *ngIf="error()" class="mt-6 text-center">
+    <p class="text-red-600 mb-2">{{ error() }}</p>
+    <button
+      type="button"
+      (click)="retry()"
+      class="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+    >
+      Retry
+    </button>
+  </div>
+
+  <p *ngIf="!hasMore() && pokemons().length > 0" class="text-center text-gray-400 mt-8">
+    You've reached the end of the Pokédex.
+  </p>
+</section>

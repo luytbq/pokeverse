@@ -1,10 +1,13 @@
 import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { NavbarComponent } from './components/layout/navbar/navbar.component';
 
 @Component({
     selector: 'app-root',
     templateUrl: './app.component.html',
     styleUrls: ['./app.component.scss'],
-    standalone: false
+    standalone: true,
+    imports: [RouterOutlet, NavbarComponent]
 })
 export class AppComponent {
   title = 'pokeverse';

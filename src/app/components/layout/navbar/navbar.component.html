@@ -1,0 +1,57 @@
+<nav class="sticky top-0 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex justify-between items-center h-16">
+      <!-- Logo -->
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🔴</span>
+        <h1 class="font-bold text-xl">PokeVerse</h1>
+      </div>
+
+      <!-- Nav Links -->
+      <div class="hidden md:flex gap-1">
+        @for (link of navLinks; track link.path) {
+          <a
+            [routerLink]="link.path"
+            routerLinkActive="bg-white/20"
+            [routerLinkActiveOptions]="{ exact: link.path === '/' }"
+            class="px-3 py-2 rounded-md text-sm font-medium hover:bg-white/10 transition"
+          >
+            <span class="mr-1">{{ link.icon }}</span>{{ link.label }}
+          </a>
+        }
+      </div>
+
+      <!-- Badges -->
+      <div class="flex items-center gap-4">
+        <!-- Favorites Badge -->
+        <div class="relative">
+          <a routerLink="/favorites" class="hover:bg-white/10 px-2 py-2 rounded transition">
+            ❤️
+          </a>
+          @if (stateService.favorites().length) {
+            <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+              {{ stateService.favorites().length }}
+            </span>
+          }
+        </div>
+
+        <!-- Team Badge -->
+        <div class="relative">
+          <a routerLink="/team" class="hover:bg-white/10 px-2 py-2 rounded transition">
+            👥
+          </a>
+          @if (stateService.team().length) {
+            <span class="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+              {{ stateService.team().length }}/6
+            </span>
+          }
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button class="md:hidden p-2 hover:bg-white/10 rounded transition">
+          ☰
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
